@@ -115,11 +115,11 @@ function newId() {
 
 // ---------- API ----------
 
-/** 로그인. 전화번호 형식과 비밀번호 유무만 확인 */
-export async function login({ phone, password }) {
+/** 로그인. 비밀번호 없이 전화번호 형식만 확인 */
+export async function login({ phone }) {
   await delay();
-  if (!/^\d{10,11}$/.test(phone) || !password) {
-    throw new Error('전화번호 또는 비밀번호가 올바르지 않습니다.');
+  if (!/^\d{10,11}$/.test(phone)) {
+    throw new Error('전화번호가 올바르지 않습니다.');
   }
   return { message: 'ok', data: { phone } };
 }

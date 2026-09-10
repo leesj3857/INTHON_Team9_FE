@@ -98,7 +98,7 @@ export default function Send() {
               </label>
               <span className="ml-2 text-white/60 text-[10px] font-normal font-['Pretendard Variable'] pretendard">
  
-                *전화번호로 비밀번호와 답변 알림을 보내드려요
+                *전화번호로 보관함에 입장할 수 있어요
               </span>
             </div>
             <input
