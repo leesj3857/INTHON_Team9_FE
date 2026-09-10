@@ -1,4 +1,3 @@
-import { comment } from 'postcss';
 import PropTypes from 'prop-types';
 
 export default function DiaryCont({ archiveItems }) {

@@ -50,13 +50,12 @@ export default function App() {
               <img className="h-1/3" src="/moon.png" alt="" />
               나의 조각집
             </Link>
-            <div className="h-full flex flex-col justify-center items-center text-white cursor-pointer">
+            <div
+              onClick={() => navigate('/archive')}
+              className="h-full flex flex-col justify-center items-center text-white cursor-pointer"
+            >
               <img className="h-1/5" src="/message.png" alt="" />
- 
-              <span onClick={() => navigate('/archive')} className="text-sm pretendard">
- 
-                보관함
-              </span>
+              <span className="text-sm pretendard">보관함</span>
             </div>
           </div>
         ) : location.pathname === '/archive' ? (

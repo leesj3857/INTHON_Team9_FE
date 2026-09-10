@@ -1,19 +1,24 @@
 import DiaryCont from '../components/ViewComponents/DiaryCont';
 import Comments from '../components/ViewComponents/Comments';
-import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useState, useEffect } from 'react';
+import { api } from '../api';
 
 export default function Submitted() {
   const [issent, setIssent] = useState('begin');
   const [comment, setComment] = useState('');
-  const [archiveItems, setArchiveItems]=useState({})
-  const phonenumber= useSelector((state) => state.user.number);
-  const data = useSelector((state) => state.post.postId);
-  console.log(data)
+  const [archiveItems, setArchiveItems] = useState({});
+  const phonenumber = useSelector((state) => state.user.number);
+  const twinPostId = useSelector((state) => state.post.postId);
   const navigator = useNavigate();
   const maxChars = 250;
+
+  // 조각글을 작성하지 않고 직접 접근한 경우 작성 화면으로 보냄
+  useEffect(() => {
+    if (!twinPostId) navigator('/send', { replace: true });
+  }, [twinPostId, navigator]);
+
   useEffect(() => {
     document.querySelector('body').classList.remove('grad');
     if (issent === 'begin') {
@@ -24,67 +29,38 @@ export default function Submitted() {
       document.querySelector('body').style.backgroundColor = '#321E5B';
     }
   }, [issent]);
-  const onsubmit = () => {
+
+  const onsubmit = async () => {
     if (comment.length === 0) {
-      document.querySelector('.writing-area') ? document.querySelector('.writing-area').classList.add('wrong') : '';
-    } else {
-      const postData = async () => {
-        const formData = new FormData();
-        formData.append('commentContent', comment);
-        formData.append('phone', phonenumber);
-        formData.append('postId', data)
-        try {
-            const response = await fetch(`https://ae78-163-152-3-142.ngrok-free.app/api/v1/post/detail/${data}`, {
-                method: 'POST'
-            });
-            const result = await response.json();
-            if (response.ok) {
-                console.log('서버 응답:', result);
-                setArchiveItems({
-                  date:result.data.createdDate.split('T')[0],
-                  writer:'익명',
-                  content:result.data.content
-                })
-                console.log(archiveItems)
-            }
-            
-        } catch (error) {
-            console.error('요청 오류:', error);
-        }
-    };
-    
-    // 함수 호출 예시
-    postData();
-      setIssent('end');
+      const area = document.querySelector('.writing-area');
+      if (area) area.classList.add('wrong');
+      return;
     }
+    try {
+      await api.createComment({
+        postId: twinPostId,
+        phone: phonenumber,
+        commentContent: comment,
+      });
+    } catch (error) {
+      console.error('요청 오류:', error);
+    }
+    setIssent('end');
   };
-  const showMessage = () => {
-    const postData = async () => {
-      try {
-          const response = await fetch(`https://ae78-163-152-3-142.ngrok-free.app/api/v1/post/detail/${data}`, {
-              method: 'POST'
-          });
-          const result = await response.json();
-          if (response.ok) {
-              console.log('서버 응답:', result);
-              setArchiveItems({
-                date:result.data.createdDate.split('T')[0],
-                writer:'익명',
-                content:result.data.content
-              })
-              console.log(archiveItems)
-          }
-          
-      } catch (error) {
-          console.error('요청 오류:', error);
-      }
-  };
-  
-  // 함수 호출 예시
-  postData();
+
+  const showMessage = async () => {
+    try {
+      const detail = await api.fetchPostDetail(twinPostId);
+      setArchiveItems({
+        date: detail.createdDate.split('T')[0],
+        writer: '익명',
+        content: detail.content,
+      });
+    } catch (error) {
+      console.error('요청 오류:', error);
+    }
     setIssent('main');
   };
-  
 
   return (
     <div
@@ -140,10 +116,8 @@ export default function Submitted() {
         />
  
         <div
-          onClick={() => {
-            onsubmit();
-          }}
-          className=" w-5/6 py-2 text-center rounded-3xl text-xs h-[39px] bg-white pretendard"
+          onClick={onsubmit}
+          className=" w-5/6 py-2 text-center rounded-3xl text-xs h-[39px] bg-white pretendard cursor-pointer"
  
         >
           마음 전달하기
@@ -168,10 +142,10 @@ export default function Submitted() {
           <h5 className="text-white pretendard">문자로 알려드립니다.</h5>
         </div>
         <button
-          onClick={() => navigator('/main')}
+          onClick={() => navigator('/archive')}
           className="w-5/6 h-[39px] bg-white rounded-[21px] text-center align-center pretendard"
         >
-          확인
+          보관함으로
         </button>
       </div>
     </div>

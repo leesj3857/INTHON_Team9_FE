@@ -3,6 +3,8 @@ import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { setNumber } from '../features/userSlice';
 import { setpostId } from '../features/postSlice';
+import { api } from '../api';
+
 export default function Send() {
   const maxChars = 500;
   const [journalEntry, setJournalEntry] = useState('');
@@ -13,7 +15,7 @@ export default function Send() {
     nickname: false,
     journalEntry: false,
   });
-  const [twinId,settwinId]=useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -34,70 +36,37 @@ export default function Send() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (isSubmitting) return;
     const newErrors = {
-      phoneNumber: !/^\d{10,11}$/.test(phoneNumber), // 정규식으로 폰번호 확인 (예: 010-1234-5678)
-      nickname: nickname.trim() === '', // 닉네임이 비어있는지 확인
-      journalEntry: journalEntry.trim() === '', // journalEntry가 비어있는지 확인
+      phoneNumber: !/^\d{10,11}$/.test(phoneNumber), // 예: 01012345678
+      nickname: nickname.trim() === '',
+      journalEntry: journalEntry.trim() === '',
     };
 
     setErrors(newErrors);
-    if (
-      !newErrors.phoneNumber &&
-      !newErrors.nickname &&
-      !newErrors.journalEntry
-    ) {
-      try {
-          // FormData 생성
-          const formData = new FormData();
-          formData.append('content', journalEntry);
-          formData.append('nickname', nickname);
-          formData.append('phone', phoneNumber);
+    if (newErrors.phoneNumber || newErrors.nickname || newErrors.journalEntry) {
+      return;
+    }
 
-          const postData = async () => {
-            try {
-                const response = await fetch(`https://ae78-163-152-3-142.ngrok-free.app/api/v1/post/similar`, {
-                    method: 'POST'
-                });
-                const result = await response.json();
-                if (response.ok) {
-                    console.log('서버 응답:', result);
-                    settwinId(result.data)
-                    dispatch(setpostId(result.data));
-                    console.log(result.data)
-                    formData.append('twinPostId',result.data);
-                }
-                
-            } catch (error) {
-                console.error('요청 오류:', error);
-            }
-        };
-        
-        // 함수 호출 예시
-        postData();
+    setIsSubmitting(true);
+    try {
+      // 1) 나와 닮은 조각글 찾기
+      const twinPostId = await api.fetchSimilarPostId({ content: journalEntry });
+      dispatch(setpostId(twinPostId));
 
-
-          // API 요청
-          const response = await fetch('https://ae78-163-152-3-142.ngrok-free.app/api/v1/post', {
-              method: 'POST',
-              body: formData
-          });
-          
-          // 응답 처리
-          const result = await response.json();
-          if (response.ok) {
-              console.log(result.message);
-              dispatch(setNumber(phoneNumber));
-              
-              navigate('/submitted',{ state: twinId });
-            
-               // 성공 시 페이지 이동
-          } else {
-              console.error('저장 실패:', result);
-          }
-      } catch (error) {
-          console.error('API 요청 오류:', error);
- 
-      }
+      // 2) 조각글 저장
+      await api.createPost({
+        content: journalEntry,
+        nickname,
+        phone: phoneNumber,
+        twinPostId,
+      });
+      dispatch(setNumber(phoneNumber));
+      navigate('/submitted');
+    } catch (error) {
+      console.error('API 요청 오류:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -198,11 +167,11 @@ export default function Send() {
             </div>
           </div>
           <button
-            onClick={handleSubmit} 
-            className="w-[306px] h-[39px] bg-white/80 py-2 text-[#2d1a58] text-xs rounded-full pretendard"
- 
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="w-[306px] h-[39px] bg-white/80 py-2 text-[#2d1a58] text-xs rounded-full pretendard disabled:opacity-60"
           >
-            띄워보내기
+            {isSubmitting ? '닮은 조각글을 찾는 중...' : '띄워보내기'}
           </button>
         </form>
       </div>

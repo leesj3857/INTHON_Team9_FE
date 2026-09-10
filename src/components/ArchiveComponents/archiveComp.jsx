@@ -2,11 +2,11 @@ import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from './dateFromat';
 export default function ArchiveComponents({ item }) {
-    const { author,authorMessage,category,createdDate,id } = item;
+    const { author,authorMessage,category,createdDate } = item;
     const summary = authorMessage.split('.')[0] + '.';
     // 날짜 포맷
     const dateOnly = createdDate.split('T')[0];
-    const upComingdDate = formatDate(dateOnly);
+    const upComingdDate = formatDate(createdDate);
     const formattedDate = dateOnly.replace(/-/g, '.');
     const typeIcons = {
         '글': '/writing.png',
